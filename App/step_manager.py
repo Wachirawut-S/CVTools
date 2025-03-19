@@ -6,7 +6,7 @@ steps = [
 import numpy as np
 import matplotlib.pyplot as plt
 """,
-        "desc": "Step 1: Import Libraries",
+        "desc": "Import Libraries",
         "type": "initial"
     }
 ]

@@ -26,7 +26,6 @@ class CVToolsApp:
         self.frame_right.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
 
         tk.Button(self.frame_right, text="Add Step", command=self.open_add_step_window, width=20).pack(padx=5, pady=5)
-        tk.Button(self.frame_right, text="Edit Step", command=self.open_edit_step_window, width=20).pack(padx=5, pady=5)
         tk.Button(self.frame_right, text="Generate Notebook", command=self.generate_notebook, width=20).pack(padx=5, pady=5)
 
     def update_listbox(self):
@@ -39,16 +38,6 @@ class CVToolsApp:
         # The AddStepWindow class is defined in ui_add_step.py.
         from ui_add_step import AddStepWindow
         AddStepWindow(self.master, self)
-
-    def open_edit_step_window(self):
-        # Open a window to edit an existing step.
-        from ui_edit_step import EditStepWindow
-        selected = self.listbox_steps.curselection()
-        if not selected:
-            messagebox.showerror("Error", "Please select a step to edit.")
-            return
-        idx = selected[0]
-        EditStepWindow(self.master, self, idx)
 
     def generate_notebook(self):
         # Generate the notebook using the current steps.

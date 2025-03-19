@@ -34,6 +34,14 @@ class AddStepWindow:
             tk.Label(self.frame_options, text="Variable Name:").grid(row=0, column=0, sticky='w')
             self.var_entry = tk.Entry(self.frame_options)
             self.var_entry.grid(row=0, column=1, pady=5)
+
+            # Add the RGB/Gray option
+            tk.Label(self.frame_options, text="Choose Output Format:").grid(row=1, column=0, sticky='w')
+            self.format_var = tk.StringVar(value="RGB")
+            self.format_dropdown = ttk.Combobox(self.frame_options, textvariable=self.format_var,
+                                                 values=["RGB", "Gray"], state="readonly")
+            self.format_dropdown.grid(row=1, column=1, pady=5)
+        
         elif proc == "Extract Color":
             tk.Label(self.frame_options, text="Source Image Variable:").grid(row=0, column=0, sticky='w')
             imported = [step.get("variable") for step in get_steps() if step.get("type") == "Import Image"]
@@ -54,9 +62,8 @@ class AddStepWindow:
             self.color_dropdown = ttk.Combobox(self.frame_options, textvariable=self.color_var,
                                                values=["red", "green", "blue", "yellow", "cyan", "magenta", "pink"], state="readonly")
             self.color_dropdown.grid(row=2, column=1, pady=5)
+
         elif proc == "Merge Image":
-    # For Merge Image, let the user select two source images from all processed steps.
-    # We filter out the initial (library import) step.
             available = [step.get("variable") for step in get_steps() if step.get("type") != "initial" and step.get("variable")]
             tk.Label(self.frame_options, text="Source Image Variable 1:").grid(row=0, column=0, sticky='w')
             self.src1_var = tk.StringVar(value=available[0])
@@ -73,9 +80,6 @@ class AddStepWindow:
             tk.Label(self.frame_options, text="New Variable Name:").grid(row=2, column=0, sticky='w')
             self.merge_var_entry = tk.Entry(self.frame_options)
             self.merge_var_entry.grid(row=2, column=1, pady=5)
-
-            
-
     
     def save_new_step(self):
         proc = self.process_var.get()
@@ -91,41 +95,46 @@ class AddStepWindow:
             if not file_path:
                 messagebox.showerror("Error", "No file selected.")
                 return
-            new_code = f'''# Import Image for variable '{var_name}'
+            output_format = self.format_var.get()  # Get selected output format (RGB or Gray)
+            
+            # Adjust the code based on the output format
+            if output_format == "RGB":
+                new_code = f'''# Import Image for variable '{var_name}'
 file_path = r"{file_path}"
 {var_name} = cv2.imread(file_path)
 {var_name}_rgb = cv2.cvtColor({var_name}, cv2.COLOR_BGR2RGB)
-{var_name}_gray = cv2.cvtColor({var_name}, cv2.COLOR_BGR2GRAY)
 
 plt.figure(figsize=(15,5))
-plt.subplot(1,3,1)
+plt.subplot(1,2,1)
 plt.title("Original - {var_name}")
 plt.imshow(cv2.cvtColor({var_name}, cv2.COLOR_BGR2RGB))
 plt.axis('off')
+plt.show()
+'''
+            else:  # If it's 'Gray'
+                new_code = f'''# Import Image for variable '{var_name}'
+file_path = r"{file_path}"
+{var_name} = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
 
-plt.subplot(1,3,2)
-plt.title("RGB - {var_name}")
-plt.imshow({var_name}_rgb)
+plt.figure(figsize=(6,6))
+plt.title("Grayscale - {var_name}")
+plt.imshow({var_name}, cmap='gray')
 plt.axis('off')
-
-plt.subplot(1,3,3)
-plt.title("Gray - {var_name}")
-plt.imshow({var_name}_gray, cmap='gray')
-plt.axis('off')
-
 plt.show()
 '''
             step = {
                 "code": new_code,
-                "desc": f"Import Image (var: {var_name}, file: {file_path})",
+                "desc": f"Import Image (var: {var_name}, file: {file_path}, format: {output_format})",
                 "type": "Import Image",
                 "variable": var_name,
-                "file_path": file_path
+                "file_path": file_path,
+                "format": output_format
             }
             add_step(step)
             self.app.refresh_steps(get_steps())
             messagebox.showinfo("Step Added", "Import Image step added successfully!")
             self.top.destroy()
+        
         elif proc == "Extract Color":
             imported = [step.get("variable") for step in get_steps() if step.get("type") == "Import Image"]
             if not imported:
@@ -148,7 +157,7 @@ plt.show()
                 upper = "[126, 255, 255]"
             #more_colors
             elif selected_color.lower() == "yellow":
-                lower = "[15, 100, 100]" #[(15, 100, 100), (35, 255, 255)],
+                lower = "[15, 100, 100]" 
                 upper = "[35, 255, 255]"
             elif selected_color.lower() == "cyan":
                 lower = "[80, 100, 100]" 
@@ -190,6 +199,7 @@ plt.show()
             self.app.refresh_steps(get_steps())
             messagebox.showinfo("Step Added", "Extract Color step added successfully!")
             self.top.destroy()
+        
         elif proc == "Merge Image":
             imported = [step.get("variable") for step in get_steps() if step.get("type") == "Import Image"]
             if len(imported) < 1:
